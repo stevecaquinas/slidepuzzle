@@ -8,17 +8,40 @@
     body {
       font-family: sans-serif;
       text-align: center;
-      margin-top: 20px;
+      margin: 0;
+      min-height: 100vh;
+      background: #0074D9; /* Blue */
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
+    }
+    .frame-container {
+      position: relative;
+      display: inline-block;
+      margin: 20px 0;
+      width: 340px; /* Set to your slide.png width */
+      height: 340px; /* Set to your slide.png height */
+    }
+    .frame-img {
+      display: block;
+      width: 340px;
+      height: 340px;
+      pointer-events: none;
+      user-select: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
     }
     #puzzle {
-      position: relative;
-      margin: 20px 0;
-      width: 300px; /* Will be updated in JS if gridSize changes */
-      height: 300px;
-      background: #ccc;
+      position: absolute;
+      top: 20px;    /* Adjust so grid fits inside yellow frame's opening */
+      left: 20px;
+      width: 300px !important;
+      height: 300px !important;
+      background: none;
+      z-index: 3;
       touch-action: manipulation;
       user-select: none;
     }
@@ -31,22 +54,28 @@
       cursor: pointer;
       transition: transform 0.25s cubic-bezier(.44,1.32,.82,1);
       box-shadow: 0 2px 6px #0002;
-      z-index: 1;
+      z-index: 4;
     }
     .empty {
       background: #eee;
       cursor: default;
-      z-index: 0;
+      z-index: 1;
       transition: none;
     }
     @media (max-width: 400px) {
+      .frame-container, .frame-img {
+        width: 220px !important;
+        height: 220px !important;
+      }
       #puzzle {
-        width: 200px !important;
-        height: 200px !important;
+        width: 180px !important;
+        height: 180px !important;
+        top: 20px;
+        left: 20px;
       }
       .tile {
-        width: 66.6px !important;
-        height: 66.6px !important;
+        width: 60px !important;
+        height: 60px !important;
       }
     }
   </style>
@@ -61,7 +90,10 @@
   </select>
   <button onclick="startPuzzle()">Start Puzzle</button>
   <div>Moves: <span id="moveCounter">0</span></div>
-  <div id="puzzle"></div>
+  <div class="frame-container">
+    <div id="puzzle"></div>
+    <img src="slide.png" alt="Yellow Frame" class="frame-img" draggable="false">
+  </div>
   <div id="message"></div>
   <script>
     let image, tiles = [], gridSize = 3, emptyTile, tileSize = 100;
@@ -158,15 +190,12 @@
           tile.style.backgroundPosition = `-${tile.dataset.correctX * tileSize}px -${tile.dataset.correctY * tileSize}px`;
           tile.style.transform = `translate(${x * tileSize}px, ${y * tileSize}px)`;
           if (skipAnim) {
-            // Remove and re-append for first draw
             puzzle.appendChild(tile);
           }
-          // Add both mouse and touch event listeners
           tile.onclick = () => handleTileClick(x, y);
           tile.ontouchstart = function(e) { e.preventDefault(); handleTileClick(x, y); };
         }
       }
-      // Draw the empty tile only once at setup for accessibility
       if (skipAnim) {
         const emptyDiv = document.createElement('div');
         emptyDiv.className = 'tile empty';
@@ -175,7 +204,6 @@
         emptyDiv.style.transform = `translate(${emptyTile.x * tileSize}px, ${emptyTile.y * tileSize}px)`;
         puzzle.appendChild(emptyDiv);
       } else {
-        // Move the empty tile
         const emptyDiv = puzzle.querySelector('.tile.empty');
         if (emptyDiv) {
           emptyDiv.style.width = tileSize + 'px';
