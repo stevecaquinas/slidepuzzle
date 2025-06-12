@@ -130,7 +130,12 @@
         const y = Math.floor(i / gridSize);
 
         if (tile) {
+          // Add both mouse and touch event listeners
           tile.onclick = () => handleTileClick(x, y);
+          tile.ontouchstart = function(e) {
+            e.preventDefault(); // Prevent scrolling on mobile
+            handleTileClick(x, y);
+          };
           puzzle.appendChild(tile);
         } else {
           const emptyDiv = document.createElement('div');
