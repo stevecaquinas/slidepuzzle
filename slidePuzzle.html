@@ -20,13 +20,13 @@
       position: relative;
       display: inline-block;
       margin: 20px 0;
-      width: 340px; /* Set to your slide.png width */
-      height: 340px; /* Set to your slide.png height */
+      width: 460px; /* Default width: 400 puzzle + 30*2 border */
+      height: 460px;
     }
     .frame-img {
       display: block;
-      width: 340px;
-      height: 340px;
+      width: 460px;
+      height: 460px;
       pointer-events: none;
       user-select: none;
       position: absolute;
@@ -36,10 +36,10 @@
     }
     #puzzle {
       position: absolute;
-      top: 20px;    /* Adjust so grid fits inside yellow frame's opening */
-      left: 20px;
-      width: 300px !important;
-      height: 300px !important;
+      top: 30px;    /* Border */
+      left: 30px;
+      width: 400px;
+      height: 400px;
       background: none;
       z-index: 3;
       touch-action: manipulation;
@@ -62,20 +62,20 @@
       z-index: 1;
       transition: none;
     }
-    @media (max-width: 400px) {
+    @media (max-width: 500px) {
       .frame-container, .frame-img {
-        width: 220px !important;
-        height: 220px !important;
+        width: 280px !important;   /* 240 puzzle + 20*2 border */
+        height: 280px !important;
       }
       #puzzle {
-        width: 180px !important;
-        height: 180px !important;
-        top: 20px;
-        left: 20px;
+        width: 240px !important;
+        height: 240px !important;
+        top: 20px !important;
+        left: 20px !important;
       }
       .tile {
-        width: 60px !important;
-        height: 60px !important;
+        width: 80px !important;
+        height: 80px !important;
       }
     }
   </style>
@@ -100,27 +100,36 @@
     let moveCount = 0;
     const defaultImageSrc = 'https://via.placeholder.com/400';
 
-   function updatePuzzleSize() {
-  // Make tileSize fit evenly within the 300x300 puzzle area
-  tileSize = Math.floor(300 / gridSize);
-  const puzzle = document.getElementById('puzzle');
-  puzzle.style.width = (tileSize * gridSize) + 'px';
-  puzzle.style.height = (tileSize * gridSize) + 'px';
+    function updatePuzzleSize() {
+      // Set puzzle area size: bigger for desktop, larger but still responsive for mobile
+      const isMobile = window.innerWidth <= 500;
+      const puzzleArea = isMobile ? 240 : 400; // 400x400 for desktop, 240x240 for mobile
+      tileSize = Math.floor(puzzleArea / gridSize);
 
-  // Dynamically size the frame/container for the puzzle plus border
-  const frameContainer = document.querySelector('.frame-container');
-  const frameImg = document.querySelector('.frame-img');
-  const frameSize = (tileSize * gridSize) + 40; // 20px border on each side
-  frameContainer.style.width = frameSize + 'px';
-  frameContainer.style.height = frameSize + 'px';
-  frameImg.style.width = frameSize + 'px';
-  frameImg.style.height = frameSize + 'px';
-}
+      const puzzle = document.getElementById('puzzle');
+      puzzle.style.width = (tileSize * gridSize) + 'px';
+      puzzle.style.height = (tileSize * gridSize) + 'px';
+
+      // Adjust frame size (border: 30px desktop, 20px mobile)
+      const frameBorder = isMobile ? 20 : 30;
+      const frameContainer = document.querySelector('.frame-container');
+      const frameImg = document.querySelector('.frame-img');
+      const frameSize = (tileSize * gridSize) + frameBorder * 2;
+      frameContainer.style.width = frameSize + 'px';
+      frameContainer.style.height = frameSize + 'px';
+      frameImg.style.width = frameSize + 'px';
+      frameImg.style.height = frameSize + 'px';
+
+      // Position puzzle area inside the frame
+      puzzle.style.top = frameBorder + 'px';
+      puzzle.style.left = frameBorder + 'px';
+    }
 
     window.onload = () => {
       image = new Image();
       image.onload = () => setupGrid();
       image.src = defaultImageSrc;
+      updatePuzzleSize();
     }
 
     function startPuzzle() {
@@ -268,6 +277,12 @@
         emptyTile = { x: move.x, y: move.y };
       }
     }
+
+    // Make puzzle responsive on window resize
+    window.addEventListener('resize', () => {
+      updatePuzzleSize();
+      drawTiles(true);
+    });
   </script>
 </body>
 </html>
