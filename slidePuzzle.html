@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slide Puzzle</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #puzzle {
+      display: grid;
+      margin: 20px 0;
+      gap: 2px;
+    }
+    .tile {
+      width: 100px;
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+    }
+    .empty {
+      background: #eee;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <h1>Slide Puzzle</h1>
+  <input type="file" id="imageInput" accept="image/*" />
+  <select id="gridSize">
+    <option value="3">3 x 3</option>
+    <option value="4">4 x 4</option>
+    <option value="5">5 x 5</option>
+  </select>
+  <button onclick="startPuzzle()">Start Puzzle</button>
+  <div>Moves: <span id="moveCounter">0</span></div>
+  <div id="puzzle"></div>
+  <div id="message"></div>
+
+  <script>
+    let image, tiles = [], gridSize, emptyTile, tileSize = 100;
+    let moveCount = 0;
+    const defaultImageSrc = 'https://via.placeholder.com/400';
+
+    window.onload = () => {
+      image = new Image();
+      image.onload = () => setupGrid();
+      image.src = defaultImageSrc;
+    }
+
+    function startPuzzle() {
+      const input = document.getElementById('imageInput');
+      const file = input.files[0];
+
+      gridSize = parseInt(document.getElementById('gridSize').value);
+      moveCount = 0;
+      document.getElementById('moveCounter').textContent = moveCount;
+      document.getElementById('message').textContent = '';
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const originalImage = new Image();
+          originalImage.onload = () => {
+            const size = Math.min(originalImage.width, originalImage.height);
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(originalImage,
+              (originalImage.width - size) / 2,
+              (originalImage.height - size) / 2,
+              size, size,
+              0, 0, size, size);
+            image = new Image();
+            image.onload = () => setupGrid();
+            image.src = canvas.toDataURL();
+          }
+          originalImage.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+      } else {
+        image.onload = () => setupGrid();
+        image.src = defaultImageSrc;
+      }
+    }
+
+    function setupGrid() {
+      const puzzle = document.getElementById('puzzle');
+      puzzle.innerHTML = '';
+      puzzle.style.gridTemplateColumns = `repeat(${gridSize}, ${tileSize}px)`;
+      tiles = [];
+
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const i = y * gridSize + x;
+          if (i === gridSize * gridSize - 1) {
+            emptyTile = { x, y };
+            tiles.push(null);
+          } else {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.style.backgroundImage = `url(${image.src})`;
+            tile.style.backgroundSize = `${gridSize * tileSize}px ${gridSize * tileSize}px`;
+            tile.style.backgroundPosition = `-${x * tileSize}px -${y * tileSize}px`;
+            tile.dataset.correctX = x;
+            tile.dataset.correctY = y;
+            tiles.push(tile);
+          }
+        }
+      }
+
+      drawTiles();
+      shuffleTiles();
+    }
+
+    function drawTiles() {
+      const puzzle = document.getElementById('puzzle');
+      puzzle.innerHTML = '';
+
+      for (let i = 0; i < tiles.length; i++) {
+        const tile = tiles[i];
+        const x = i % gridSize;
+        const y = Math.floor(i / gridSize);
+
+        if (tile) {
+          tile.onclick = () => handleTileClick(x, y);
+          puzzle.appendChild(tile);
+        } else {
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'tile empty';
+          puzzle.appendChild(emptyDiv);
+        }
+      }
+    }
+
+    function handleTileClick(x, y) {
+      const dx = Math.abs(x - emptyTile.x);
+      const dy = Math.abs(y - emptyTile.y);
+      if (dx + dy === 1) {
+        const clickedIndex = y * gridSize + x;
+        const emptyIndex = emptyTile.y * gridSize + emptyTile.x;
+        [tiles[clickedIndex], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[clickedIndex]];
+        emptyTile = { x, y };
+        moveCount++;
+        document.getElementById('moveCounter').textContent = moveCount;
+        drawTiles();
+        checkWin();
+      }
+    }
+
+    function checkWin() {
+      for (let i = 0; i < tiles.length - 1; i++) {
+        const tile = tiles[i];
+        const x = i % gridSize;
+        const y = Math.floor(i / gridSize);
+        if (!tile || parseInt(tile.dataset.correctX) !== x || parseInt(tile.dataset.correctY) !== y) {
+          return;
+        }
+      }
+      document.getElementById('message').textContent = `You completed the puzzle in ${moveCount} moves!`;
+    }
+
+    function shuffleTiles() {
+      let moves = 1000;
+      while (moves-- > 0) {
+        const { x, y } = emptyTile;
+        const neighbors = [
+          { x: x - 1, y },
+          { x: x + 1, y },
+          { x, y: y - 1 },
+          { x, y: y + 1 }
+        ].filter(p => p.x >= 0 && p.x < gridSize && p.y >= 0 && p.y < gridSize);
+
+        const move = neighbors[Math.floor(Math.random() * neighbors.length)];
+        const moveIndex = move.y * gridSize + move.x;
+        const emptyIndex = emptyTile.y * gridSize + emptyTile.x;
+        [tiles[moveIndex], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[moveIndex]];
+        emptyTile = { x: move.x, y: move.y };
+      }
+      drawTiles();
+    }
+  </script>
+</body>
+</html>
