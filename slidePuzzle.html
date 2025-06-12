@@ -100,12 +100,22 @@
     let moveCount = 0;
     const defaultImageSrc = 'https://via.placeholder.com/400';
 
-    function updatePuzzleSize() {
-      tileSize = Math.min(100, Math.floor(300 / gridSize));
-      const puzzle = document.getElementById('puzzle');
-      puzzle.style.width = (tileSize * gridSize) + 'px';
-      puzzle.style.height = (tileSize * gridSize) + 'px';
-    }
+   function updatePuzzleSize() {
+  // Make tileSize fit evenly within the 300x300 puzzle area
+  tileSize = Math.floor(300 / gridSize);
+  const puzzle = document.getElementById('puzzle');
+  puzzle.style.width = (tileSize * gridSize) + 'px';
+  puzzle.style.height = (tileSize * gridSize) + 'px';
+
+  // Dynamically size the frame/container for the puzzle plus border
+  const frameContainer = document.querySelector('.frame-container');
+  const frameImg = document.querySelector('.frame-img');
+  const frameSize = (tileSize * gridSize) + 40; // 20px border on each side
+  frameContainer.style.width = frameSize + 'px';
+  frameContainer.style.height = frameSize + 'px';
+  frameImg.style.width = frameSize + 'px';
+  frameImg.style.height = frameSize + 'px';
+}
 
     window.onload = () => {
       image = new Image();
